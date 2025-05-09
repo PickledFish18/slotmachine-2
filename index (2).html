@@ -1,0 +1,305 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>嚇鼠了神敲敲遊戲系統</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            height: 100vh;
+            justify-content: center;
+        }
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        #game-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            margin: 20px auto;
+        }
+        .hole {
+            width: 100px;
+            height: 100px;
+            background-color: #ddd;
+            border-radius: 50%;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .mole {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            bottom: -100px;
+            transition: bottom 0.3s;
+        }
+        .mole.up {
+            bottom: 0;
+        }
+        #score, #timer {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+        #start-button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        #start-button:hover {
+            background-color: #218838;
+        }
+        #start-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>嚇鼠了神敲敲遊戲系統</h1>
+    <div id="game-container">
+        <div id="score">得分: 0</div>
+        <div id="timer">時間: 2:00</div>
+        <div id="game-board">
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <!-- Firefly-inspired mole: orange hair, fire-themed outfit -->
+                <!-- Hair -->
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <!-- Face -->
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <!-- Eyes -->
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <!-- Nose -->
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <!-- Fire-themed dress -->
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <!-- Flame accents -->
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+            <div class="hole"><div class="mole"><svg width="100" height="100" viewBox="0 0 100 100">
+                <path d="M30 20 C20 10, 40 0, 50 10 C60 0, 80 10, 70 20 L65 40 L35 40 Z" fill="#FFA500"/>
+                <circle cx="50" cy="50" r="20" fill="#FFE4B5"/>
+                <circle cx="42" cy="45" r="3" fill="black"/>
+                <circle cx="58" cy="45" r="3" fill="black"/>
+                <circle cx="50" cy="52" r="2" fill="pink"/>
+                <path d="M30 70 C30 90, 70 90, 70 70 L65 60 L35 60 Z" fill="#FF4500"/>
+                <path d="M35 60 C33 55, 37 50, 35 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+                <path d="M65 60 C67 55, 63 50, 65 45" fill="none" stroke="#FFD700" stroke-width="2"/>
+            </svg></div></div>
+        </div>
+        <button id="start-button">開始遊戲</button>
+    </div>
+
+    <script>
+        const holes = document.querySelectorAll('.hole');
+        const moles = document.querySelectorAll('.mole');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const startButton = document.getElementById('start-button');
+        let score = 0;
+        let gameActive = false;
+        let gameInterval;
+        let timerInterval;
+        let timeLeft = 120; // 2 minutes in seconds
+        let lastHoleIndex;
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `時間: ${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function randomHole() {
+            const index = Math.floor(Math.random() * holes.length);
+            if (index === lastHoleIndex) return randomHole();
+            lastHoleIndex = index;
+            return holes[index];
+        }
+
+        function showMole() {
+            if (!gameActive) return;
+            const hole = randomHole();
+            const mole = hole.querySelector('.mole');
+            mole.classList.add('up');
+            setTimeout(() => {
+                mole.classList.remove('up');
+            }, 1000);
+        }
+
+        function updateTimer() {
+            if (!gameActive) return;
+            timeLeft--;
+            timerDisplay.textContent = formatTime(timeLeft);
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function startGame() {
+            if (gameActive) return;
+            gameActive = true;
+            score = 0;
+            timeLeft = 120;
+            scoreDisplay.textContent = `得分: ${score}`;
+            timerDisplay.textContent = formatTime(timeLeft);
+            startButton.textContent = '遊戲進行中';
+            startButton.disabled = true;
+            gameInterval = setInterval(showMole, 1200);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            clearInterval(timerInterval);
+            startButton.textContent = '重新開始';
+            startButton.disabled = false;
+            alert(`遊戲結束！你的得分是: ${score}`);
+        }
+
+        function hitMole(e) {
+            if (!gameActive) return;
+            const mole = e.target.closest('.mole');
+            if (mole && mole.classList.contains('up')) {
+                score++;
+                scoreDisplay.textContent = `得分: ${score}`;
+                mole.classList.remove('up');
+            }
+        }
+
+        moles.forEach(mole => mole.addEventListener('click', hitMole));
+        startButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
